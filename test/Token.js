@@ -1,5 +1,6 @@
 const {expect} = require("chai");
 const { ethers } = require("hardhat");
+require("dotenv").config();
 
 describe("Token contract", function() {
     let Token;
