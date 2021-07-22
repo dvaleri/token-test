@@ -13,4 +13,8 @@ contract Token is ERC1155 {
     function burn(address _account, uint256 _id, uint256 _amount) public {
         _burn(_account, _id, _amount);
     }
+
+    function setURI(string memory _newuri) public {
+        _setURI(_newuri);
+    }
 }
