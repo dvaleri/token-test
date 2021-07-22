@@ -32,4 +32,12 @@ describe("Token contract", function() {
         });
     });
 
+    describe("Set URI", function(){
+        it("Should set a new URI for all token types", async function(){
+            await token.setURI("https://example-uri/{id}.json");
+            const newUri = await token.uri(0);
+            expect(newUri).to.equal("https://example-uri/{id}.json");
+        })
+    });
+
 });
