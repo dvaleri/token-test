@@ -32,6 +32,15 @@ describe("Token contract", function() {
         });
     });
 
+    describe("Get URI", function(){
+        it("Should return the same uri for all token types", async function(){
+            const uri1 = await token.uri(0);
+            const uri2 = await token.uri(1);
+            expect(uri1).to.equal("https://raw.githubusercontent.com/thechainn/mytokens/main/metadata/{id}.json");
+            expect(uri2).to.equal(uri1);
+        })
+    })
+
     describe("Set URI", function(){
         it("Should set a new URI for all token types", async function(){
             await token.setURI("https://example-uri/{id}.json");
