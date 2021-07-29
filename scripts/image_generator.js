@@ -13,6 +13,8 @@ function getText(){
     });
 }
 
+
+
 async function main(){
     const text = await getText();
     const width = 1080;
@@ -21,7 +23,7 @@ async function main(){
     const canvas = createCanvas(width, height);
     const context = canvas.getContext('2d');
 
-    const image = await loadImage("./images/base-token-v3.png");
+    const image = await loadImage("https://raw.githubusercontent.com/dvaleri/token-test/master/images/base-token-v3.png");
     context.drawImage(image, 0, 0);
 
     context.font = 'bold 60pt Ariel';
