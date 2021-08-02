@@ -7,15 +7,11 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 const { ethers } = require("ethers");
-const GitHub = require('github-api');
+const { Octokit } = require("@octokit/rest");
 
-
-const github = new GitHub({
-    username: "thechainn",
-    password: process.env.GITHUB_TOKEN
-});
-
-const repo = github.getRepo("thechainn", "mytokens");
+const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+const owner = "thechainn";
+const repo = "mytokens";
 
 // Function to get text from stdin
 function getText(_promt){
@@ -57,8 +53,7 @@ async function generateImage(name){
     context.fillText(name, 540, 540);
 
     const buffer = canvas.toBuffer('image/png');
-    //return buffer;
-    return canvas;
+    return buffer;
 }
 
 
@@ -70,39 +65,45 @@ function getPaddedId(tokenId){
     return paddedId;
 }
 
+// Uploads file to github
+async function uploadFile(content, filepath){
+    let result = await octokit.rest.repos.createOrUpdateFileContents({
+        owner,
+        repo,
+        message: "Automated image commit",
+        path: filepath,
+        content,
+    });
+    console.log(`Created commit at ${result.data.commit.html_url}`)
+}
 
 async function main(){
+    // Get tokenId from user and pad to 64 hex.
     const tokenId = await getText("Enter token id to mint: ");
-    
+    const paddedId = getPaddedId(tokenId);
+
+    // Set metadata
     let metadata = await setMetadata();
     let name = metadata["name"];
-
     metadata["image"] = `https://raw.githubusercontent.com/thechainn/mytokens/main/myimages/${tokenId}.png`;
 
-    const canvas = await generateImage(name);
-    const buffer = canvas.toBuffer();
-
+    // Generate dynamic image using token name and background image
+    const buffer = await generateImage(name);
+    
+    // Save metadata JSON and token image locally
     fs.writeFileSync(`./images/${tokenId}.png`, buffer);
-    fs.writeFileSync(`./metadata/${getPaddedId(tokenId)}.json`, JSON.stringify(metadata));
+    fs.writeFileSync(`./metadata/${paddedId}.json`, JSON.stringify(metadata));
     console.log(metadata)
 
+    // Convert image and metadata JSON to base64 to upload to github
+    let content = buffer.toString("base64");
 
-    await repo.writeFile(
-        "main",
-        `metadata/${getPaddedId(tokenId)}.json`,
-        JSON.stringify(metadata),
-        "Automated commit",
-        function(err){console.log(err)}
-    );
+    await uploadFile(content, `myimages/${tokenId}.png`);
 
-    await repo.writeFile(
-        "main",
-        `myimages/${tokenId}.png`,
-        content,
-        "Automated image commit",
-        function(err){console.log(err)}
-    );
-    
+    let objJsonStr = JSON.stringify(metadata);
+    content = Buffer.from(objJsonStr).toString("base64");
+
+   await uploadFile(content, `metadata/${paddedId}.json`);
 }
 
 main()
