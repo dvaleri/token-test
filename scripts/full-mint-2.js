@@ -6,7 +6,7 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-const { ethers } = require("ethers");
+const { ethers } = require("hardhat");
 const { Octokit } = require("@octokit/rest");
 
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
@@ -77,6 +77,13 @@ async function uploadFile(content, filepath){
     console.log(`Created commit at ${result.data.commit.html_url}`)
 }
 
+// Connects to contract and mints a token of tokenId on the blockchain
+async function mintToken(tokenId) {
+    const Token = await ethers.getContractFactory("Token");
+    const token = await Token.attach("0x52d23892fa7c493c9723d6Ef845EA689fA34Ea1E");
+    await token.mint(tokenId);
+}
+
 async function main(){
     // Get tokenId from user and pad to 64 hex.
     const tokenId = await getText("Enter token id to mint: ");
@@ -91,19 +98,22 @@ async function main(){
     const buffer = await generateImage(name);
     
     // Save metadata JSON and token image locally
-    fs.writeFileSync(`./images/${tokenId}.png`, buffer);
-    fs.writeFileSync(`./metadata/${paddedId}.json`, JSON.stringify(metadata));
+    //fs.writeFileSync(`./images/${tokenId}.png`, buffer);
+    //fs.writeFileSync(`./metadata/${paddedId}.json`, JSON.stringify(metadata));
     console.log(metadata)
 
     // Convert image and metadata JSON to base64 to upload to github
+    console.log("Uploading metdata...");
     let content = buffer.toString("base64");
-
     await uploadFile(content, `myimages/${tokenId}.png`);
 
     let objJsonStr = JSON.stringify(metadata);
     content = Buffer.from(objJsonStr).toString("base64");
+    await uploadFile(content, `metadata/${paddedId}.json`);
 
-   await uploadFile(content, `metadata/${paddedId}.json`);
+    // Mint the token on the blockchain
+    console.log("Minting token...");
+    await mintToken(tokenId);
 }
 
 main()
